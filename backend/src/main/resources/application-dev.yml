@@ -1,0 +1,10 @@
+spring:
+  jpa:
+    show-sql: true
+
+logging:
+  level:
+    root: INFO
+    com.vlu.capstone: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
