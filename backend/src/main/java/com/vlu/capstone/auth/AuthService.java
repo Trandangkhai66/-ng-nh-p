@@ -14,6 +14,9 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import java.util.UUID;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+
 import java.util.concurrent.TimeUnit;
 
 
@@ -26,7 +29,8 @@ public class AuthService {
     private final com.vlu.capstone.user.UserService userService;
     private final OtpService otpService;
     private final StringRedisTemplate redisTemplate;
-    private final PasswordEncoder passwordEncoder; // 🔴 Thêm dòng này để hết lỗi ảnh 3923ba
+    private final PasswordEncoder passwordEncoder;
+    private final JavaMailSender mailSender;     // 🔴 Thêm dòng này để hết lỗi ảnh 3923ba
 
 
     // --- GIỮ NGUYÊN CODE CỦA TRƯỞNG NHÓM ---
@@ -45,11 +49,21 @@ public class AuthService {
     }
 
     // --- VIẾT THÊM: QUÊN MẬT KHẨU ---
-    public void initiateForgotPassword(String email) {
-        userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Email không tồn tại"));
-        String otp = otpService.generateOtp(email);
-        log.info("Mã OTP quên mật khẩu gửi tới {}: {}", email, otp);
-    }
+public void initiateForgotPassword(String email) {
+    userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Email không tồn tại"));
+    String otp = otpService.generateOtp(email);
+    
+    // 1. Vẫn in log ở Terminal để sơ cua
+    log.info("Mã OTP quên mật khẩu: {}", otp);
+
+    // 2. Gửi mail thực tế
+    SimpleMailMessage message = new SimpleMailMessage();
+    message.setTo(email);
+    message.setSubject("Mã OTP Quên Mật Khẩu");
+    message.setText("Mã OTP của bạn là: " + otp + ". Mã có hiệu lực trong 5 phút.");
+    
+    mailSender.send(message); // 🔴 Đây chính là lệnh gửi mail về Gmail của bạn
+}
     public void resetPassword(ResetPasswordRequest request) {
     // 1. Kiểm tra OTP trong Redis
     String savedOtp = redisTemplate.opsForValue().get("OTP:" + request.getEmail());
